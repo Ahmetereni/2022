@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JSON Formatter</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        textarea {
+            padding: 10px;
+            box-sizing: border-box;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+        }
+
+        #inputJSON {
+            height: 30%; 
+        }
+
+        #outputJSON {
+            height: 60%; 
+            margin-top: 20px;
+        }
+
+        #drop_zone {
+            padding: 20px;
+            border: 2px dashed #ccc;
+            text-align: center;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+
+        h1, h3 {
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="drop_zone">Drop JSON file here</div>
+    <textarea id="inputJSON" placeholder="Paste your JSON here..."></textarea>
+    <textarea id="outputJSON" readonly></textarea>
+
+    <script>
+        const inputJSON = document.getElementById('inputJSON');
+        const outputJSON = document.getElementById('outputJSON');
+
+        function formatJSON() {
+            if (!inputJSON.value.trim()) {
+                outputJSON.value = '';
+                return;
+            }
+
+            let cleanedJSON = inputJSON.value.replace(/\s+/g, '');
+
+            if (!areBracketsMatched(cleanedJSON)) {
+                outputJSON.value = "Unmatched curly brackets!";
+                return;
+            }
+
+            let formattedValue = '';
+            try {
+                const parsed = JSON.parse(cleanedJSON);
+                formattedValue = JSON.stringify(parsed, null, 4);
+            } catch (error) {
+                formattedValue = "Invalid JSON input! " + error;
+            }
+
+            outputJSON.value = formattedValue;
+        }
+
+        function areBracketsMatched(str) {
+            let count = 0;
+            for (let char of str) {
+                if (char === '{') {
+                    count++;
+                } else if (char === '}') {
+                    count--;
+                }
+                if (count < 0) {
+                    return false;
+                }
+            }
+            return count === 0;
+        }
+
+        function handleFileSelect(evt) {
+            evt.stopPropagation();
+            evt.preventDefault();
+
+            const files = evt.dataTransfer.files;
+            const file = files[0];
+            const reader = new FileReader();
+
+            reader.onload = (event) => {
+                document.getElementById('inputJSON').value = event.target.result;
+                formatJSON();
+            };
+
+            reader.readAsText(file);
+        }
+
+        function handleDragOver(evt) {
+            evt.stopPropagation();
+            evt.preventDefault();
+            evt.dataTransfer.dropEffect = 'copy';
+        }
+
+        const dropZone = document.getElementById('drop_zone');
+        dropZone.addEventListener('dragover', handleDragOver, false);
+        dropZone.addEventListener('drop', handleFileSelect, false);
+        inputJSON.addEventListener('input', formatJSON);
+    </script>
+</body>
+</html>
