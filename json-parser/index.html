@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+
     <title>JSON Formatter</title>
     <style>
         body {
@@ -22,31 +24,21 @@
 
         #inputJSON {
             height: 30%; 
+            transition: border-color 0.3s;
+        }
+
+        #inputJSON:hover {
+            border-color: #999;
         }
 
         #outputJSON {
             height: 60%; 
             margin-top: 20px;
         }
-
-        #drop_zone {
-            padding: 20px;
-            border: 2px dashed #ccc;
-            text-align: center;
-            margin-top: 20px;
-            cursor: pointer;
-        }
-
-        h1, h3 {
-            color: #333;
-            margin: 0;
-            padding: 0;
-        }
     </style>
 </head>
 <body>
-    <div id="drop_zone">Drop JSON file here</div>
-    <textarea id="inputJSON" placeholder="Paste your JSON here..."></textarea>
+    <textarea id="inputJSON" placeholder="Paste your JSON here or drop a JSON file..."></textarea>
     <textarea id="outputJSON" readonly></textarea>
 
     <script>
@@ -61,17 +53,23 @@
 
             let cleanedJSON = inputJSON.value.replace(/\s+/g, '');
 
-            if (!areBracketsMatched(cleanedJSON)) {
-                outputJSON.value = "Unmatched curly brackets!";
-                return;
-            }
-
             let formattedValue = '';
             try {
                 const parsed = JSON.parse(cleanedJSON);
                 formattedValue = JSON.stringify(parsed, null, 4);
             } catch (error) {
-                formattedValue = "Invalid JSON input! " + error;
+                if (error instanceof SyntaxError) {
+                    const match = error.message.match(/position (\d+)/i);
+                    if (match) {
+                        const position = parseInt(match[1], 10);
+                        formattedValue = cleanedJSON.slice(0, position) + '❌' + cleanedJSON.slice(position);+'\n'
+
+                    } else {
+                        formattedValue = "Invalid JSON input! " + error;
+                    }
+                } else {
+                    formattedValue = "Invalid JSON input! " + error;
+                }
             }
 
             outputJSON.value = formattedValue;
@@ -114,7 +112,7 @@
             evt.dataTransfer.dropEffect = 'copy';
         }
 
-        const dropZone = document.getElementById('drop_zone');
+        const dropZone = document.getElementById('inputJSON');
         dropZone.addEventListener('dragover', handleDragOver, false);
         dropZone.addEventListener('drop', handleFileSelect, false);
         inputJSON.addEventListener('input', formatJSON);
